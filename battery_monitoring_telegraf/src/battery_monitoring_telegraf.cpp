@@ -24,6 +24,7 @@ public:
   BatteryMonitoringTelegrafNode()
       : rclcpp::Node("battery_monitoring_telegraf"),
         curl_error_buffer(CURL_ERROR_SIZE, ' '), curl{curl_easy_init()},
+        last_sample_time{now()},
         battery_state_sub{create_subscription<sensor_msgs::msg::BatteryState>(
             "/battery_state", 1,
             [this](const sensor_msgs::msg::BatteryState &msg) {
@@ -42,6 +43,7 @@ public:
 private:
   std::vector<char> curl_error_buffer;
   CURL *curl;
+  rclcpp::Time last_sample_time;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr
       battery_state_sub;
 
@@ -50,6 +52,12 @@ private:
 
 void BatteryMonitoringTelegrafNode::batteryStateCallback(
     const sensor_msgs::msg::BatteryState &msg) {
+
+  if ((now() - last_sample_time).seconds() < 5.0) {
+    return;
+  }
+  last_sample_time = now();
+
   std::string post_data =
       std::string("{\"name\": \"battery\", \"percentage\": ") +
       std::to_string(msg.percentage) +
