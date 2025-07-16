@@ -35,7 +35,8 @@ public:
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_buffer.data());
     curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/telegraf");
 
-    declare_parameter("name", "bool");
+    declare_parameter("measurement_name", "bool");
+    declare_parameter("field_name", "value");
   };
   ~BoolTelegrafNode() { curl_easy_cleanup(curl); }
 
@@ -56,8 +57,9 @@ void BoolTelegrafNode::topicCallback(const std_msgs::msg::Bool &msg) {
   last_sample_time = now();
 
   std::string post_data = telegraf_ros_lib::build_json_body(
-      get_parameter("name").as_string(),
-      {{"value", std::to_string(static_cast<int>(msg.data))}});
+      get_parameter("measurement_name").as_string(),
+      {{get_parameter("field_name").as_string(),
+        std::to_string(static_cast<int>(msg.data))}});
 
   CURLcode res = CURLE_OK;
 
