@@ -2,7 +2,7 @@
 #include <memory>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/battery_state.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <stdexcept>
 #include <string>
 #include <telegraf_ros_lib/telegraf_ros_lib.hpp>
@@ -20,39 +20,35 @@ void handle_curl_error(CURLcode code, const char *context,
   }
 }
 
-class BatteryMonitoringTelegrafNode : public rclcpp::Node {
+class BoolTelegrafNode : public rclcpp::Node {
 public:
-  BatteryMonitoringTelegrafNode()
-      : rclcpp::Node("battery_monitoring_telegraf"),
-        curl_error_buffer(CURL_ERROR_SIZE, ' '), curl{curl_easy_init()},
-        last_sample_time{now()},
-        battery_state_sub{create_subscription<sensor_msgs::msg::BatteryState>(
-            "/battery_state", 1,
-            [this](const sensor_msgs::msg::BatteryState &msg) {
-              batteryStateCallback(msg);
-            })} {
+  BoolTelegrafNode()
+      : rclcpp::Node("bool_telegraf"), curl_error_buffer(CURL_ERROR_SIZE, ' '),
+        curl{curl_easy_init()}, last_sample_time{now()},
+        bool_sub{create_subscription<std_msgs::msg::Bool>(
+            "/bool_topic", 1,
+            [this](const std_msgs::msg::Bool &msg) { topicCallback(msg); })} {
     if (curl == nullptr) {
       throw std::runtime_error{"Initializing CURL failed!"};
     }
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_buffer.data());
     curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/telegraf");
-    // curl_easy_setopt(curl, CURLOPT_URL, "http://httpbin.org/post");
+
+    declare_parameter("name", "bool");
   };
-  ~BatteryMonitoringTelegrafNode() { curl_easy_cleanup(curl); }
+  ~BoolTelegrafNode() { curl_easy_cleanup(curl); }
 
 private:
   std::vector<char> curl_error_buffer;
   CURL *curl;
   rclcpp::Time last_sample_time;
-  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr
-      battery_state_sub;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr bool_sub;
 
-  void batteryStateCallback(const sensor_msgs::msg::BatteryState &msg);
+  void topicCallback(const std_msgs::msg::Bool &msg);
 };
 
-void BatteryMonitoringTelegrafNode::batteryStateCallback(
-    const sensor_msgs::msg::BatteryState &msg) {
+void BoolTelegrafNode::topicCallback(const std_msgs::msg::Bool &msg) {
 
   if ((now() - last_sample_time).seconds() < 5.0) {
     return;
@@ -60,11 +56,8 @@ void BatteryMonitoringTelegrafNode::batteryStateCallback(
   last_sample_time = now();
 
   std::string post_data = telegraf_ros_lib::build_json_body(
-      "battery",
-      {{"percentage", std::to_string(msg.percentage)},
-       {"current", std::to_string(msg.current)},
-       {"power_supply_status", std::to_string(msg.power_supply_status)},
-       {"voltage", std::to_string(msg.voltage)}});
+      get_parameter("name").as_string(),
+      {{"value", std::to_string(static_cast<int>(msg.data))}});
 
   CURLcode res = CURLE_OK;
 
@@ -82,7 +75,7 @@ void BatteryMonitoringTelegrafNode::batteryStateCallback(
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   curl_global_init(CURL_GLOBAL_DEFAULT);
-  auto node = std::make_shared<BatteryMonitoringTelegrafNode>();
+  auto node = std::make_shared<BoolTelegrafNode>();
   rclcpp::spin(node);
   rclcpp::shutdown();
 }
