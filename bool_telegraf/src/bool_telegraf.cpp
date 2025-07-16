@@ -31,7 +31,6 @@ public:
     if (curl == nullptr) {
       throw std::runtime_error{"Initializing CURL failed!"};
     }
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_buffer.data());
     curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/telegraf");
 
