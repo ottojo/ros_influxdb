@@ -7,8 +7,11 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(CURL REQUIRED)
 
-add_library(${PROJECT_NAME} SHARED src/telegraf_ros_lib.cpp)
+add_library(${PROJECT_NAME} SHARED src/telegraf_http_client.cpp)
+target_link_libraries(${PROJECT_NAME} rclcpp::rclcpp CURL::libcurl)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -24,5 +27,7 @@ install(TARGETS ${PROJECT_NAME}
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
 ament_export_targets(export_${PROJECT_NAME})
+
+ament_export_dependencies(rclcpp CURL)
 
 ament_package()
