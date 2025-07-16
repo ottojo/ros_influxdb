@@ -1,15 +1,18 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>telegraf_ros_lib</name>
+  <name>tf_telegraf</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="jonas.otto@ipa.fraunhofer.de">ott</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>rclcpp</depend>
-  <depend>curl</depend>
+  <depend>telegraf_ros_lib</depend>
+  <depend>nav2_util</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

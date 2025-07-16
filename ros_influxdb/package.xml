@@ -1,18 +1,17 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>telegraf_ros_lib</name>
+  <name>ros_influxdb</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="jonas.otto@ipa.fraunhofer.de">ott</maintainer>
+  <maintainer email="jonas@jonasotto.com">jonas</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>rclcpp</depend>
-  <depend>curl</depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+  <depend>battery_monitoring_telegraf</depend>
+  <depend>tf_telegraf</depend>
+  <depend>bool_telegraf</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
