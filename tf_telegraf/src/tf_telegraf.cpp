@@ -10,7 +10,7 @@
 class TfTelegrafNode : public rclcpp::Node {
 public:
   TfTelegrafNode()
-      : rclcpp::Node("battery_monitoring_telegraf"),
+      : rclcpp::Node("tf_monitoring_telegraf"),
         http_client{get_logger().get_child("http_client")},
         tf2_buffer{get_clock()}, tf2_listener{tf2_buffer, this, false},
         timer_handle{create_timer(std::chrono::milliseconds{1000},
@@ -37,11 +37,11 @@ void TfTelegrafNode::timerCallback() {
     return;
   }
 
-  http_client.postValues("battery", {
-                                        {"x", global_pose.pose.position.x},
-                                        {"y", global_pose.pose.position.y},
-                                        {"z", global_pose.pose.position.z},
-                                    });
++  http_client.postValues(std::string("tf") + "_" + get_parameter("map_frame").as_string() + "_" +get_parameter("target_frame").as_string(),
+                          {{"x", global_pose.pose.position.x},
+                           {"y", global_pose.pose.position.y},
+                           {"z", global_pose.pose.position.z},
+                          });
 }
 
 int main(int argc, char **argv) {
