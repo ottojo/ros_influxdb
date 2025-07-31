@@ -37,7 +37,7 @@ void TfTelegrafNode::timerCallback() {
     return;
   }
 
-+  http_client.postValues(std::string("tf") + "_" + get_parameter("map_frame").as_string() + "_" +get_parameter("target_frame").as_string(),
+  http_client.postValues(std::string("tf") + "_" + get_parameter("map_frame").as_string() + "_" +get_parameter("target_frame").as_string(),
                           {{"x", global_pose.pose.position.x},
                            {"y", global_pose.pose.position.y},
                            {"z", global_pose.pose.position.z},
