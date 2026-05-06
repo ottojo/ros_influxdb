@@ -14,7 +14,9 @@ public:
             "/battery_state", 1,
             [this](const sensor_msgs::msg::BatteryState &msg) {
               batteryStateCallback(msg);
-            })} {};
+            })} {
+    declare_parameter("measurement_name", "battery");
+  };
 
 private:
   telegraf_ros_lib::TelegrafHttpClient http_client;
@@ -28,12 +30,12 @@ private:
 void BatteryMonitoringTelegrafNode::batteryStateCallback(
     const sensor_msgs::msg::BatteryState &msg) {
 
-  if ((now() - last_sample_time).seconds() < 5.0) {
+  if ((now() - last_sample_time).seconds() < 0.5) {
     return;
   }
   last_sample_time = now();
 
-  http_client.postValues("battery",
+  http_client.postValues(get_parameter("measurement_name").as_string(),
                          {{"percentage", msg.percentage},
                           {"current", msg.current},
                           {"power_supply_status", msg.power_supply_status},
