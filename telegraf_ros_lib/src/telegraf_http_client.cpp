@@ -40,20 +40,27 @@ TelegrafHttpClient::TelegrafHttpClient(rclcpp::Logger logger)
 
 TelegrafHttpClient::~TelegrafHttpClient() { curl_easy_cleanup(curl); }
 
-void TelegrafHttpClient::postValues(const std::string &name,
-                                    std::map<std::string, Value> data) {
+template <typename... Ts> struct Overload : Ts... {
+  using Ts::operator()...;
+};
+template <class... Ts> Overload(Ts...) -> Overload<Ts...>;
+
+void TelegrafHttpClient::postValues(
+    const std::string &name, std::map<std::string, Value> data,
+    const std::map<std::string, std::string> &tags) {
 
   std::string post_data = std::string("{\"name\": \"") + name + "\"";
   for (const auto &[key, value] : data) {
     post_data += ", \"" + key + "\": ";
-    if (std::holds_alternative<int>(value)) {
-      post_data += std::to_string(std::get<int>(value));
-    } else if (std::holds_alternative<double>(value)) {
-      post_data += std::to_string(std::get<double>(value));
-    } else {
-      throw std::runtime_error{"Value type not implemented."};
-    }
+    post_data += std::visit(
+        Overload{[](auto v) -> std::string { return std::to_string(v); }},
+        value);
   }
+
+  for (const auto &[tag_name, tag_value] : tags) {
+    post_data += ", \"tag_" + tag_name + "\": \"" + tag_value + "\"";
+  }
+
   post_data += "}";
 
   CURLcode res = CURLE_OK;

@@ -6,14 +6,15 @@
 
 namespace telegraf_ros_lib {
 
-using Value = std::variant<int, double>;
+using Value = std::variant<int, double, std::uint64_t>;
 
 class TelegrafHttpClient {
 public:
   explicit TelegrafHttpClient(rclcpp::Logger logger);
   ~TelegrafHttpClient();
 
-  void postValues(const std::string &name, std::map<std::string, Value> data);
+  void postValues(const std::string &name, std::map<std::string, Value> data,
+                  const std::map<std::string,std::string> &tags = {});
 
 private:
   rclcpp::Logger logger;
