@@ -11,7 +11,7 @@
 
   <depend>telegraf_ros_lib</depend>
   <depend>rclcpp</depend>
-  <!-- <depend>libsocketcan-dev</depend> Add this once https://github.com/ros/rosdistro/pull/51354 is merged -->
+  <depend>libsocketcan-dev</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
