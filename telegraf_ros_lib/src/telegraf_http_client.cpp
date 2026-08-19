@@ -19,6 +19,12 @@ void handle_curl_error(CURLcode code, const char *context,
   }
 }
 
+/// Function for curl to write response body into std::string (see CURLOPT_WRITEFUNCTION)
+size_t writeFunction(void *ptr, size_t size, size_t nmemb, std::string *data) {
+  data->append((char *)ptr, size * nmemb);
+  return size * nmemb;
+}
+
 CURL *init_curl() {
   curl_global_init(CURL_GLOBAL_DEFAULT);
   return curl_easy_init();
@@ -51,9 +57,23 @@ void TelegrafHttpClient::postValues(
 
   std::string post_data = std::string("{\"name\": \"") + name + "\"";
   for (const auto &[key, value] : data) {
-    post_data += ", \"" + key + "\": ";
+
+    // Special case for string values: add "string_" prefix to key.
+    // This requires json_string_fields = ["string_*"] in the
+    // [[inputs.http_listener_v2]] telegraf config
     post_data += std::visit(
-        Overload{[](auto v) -> std::string { return std::to_string(v); }},
+        Overload{[&key](const std::string &v) -> std::string {
+                   return ", \"string_" + key + "\": ";
+                 },
+                 [&key](auto) -> std::string { return ", \"" + key + "\": "; }},
+        value);
+
+    // Special case for string: add quotes, also there is no
+    // std::to_string(std::string)
+    post_data += std::visit(
+        Overload{
+            [](const std::string &v) -> std::string { return "\"" + v + "\""; },
+            [](auto v) -> std::string { return std::to_string(v); }},
         value);
   }
 
@@ -70,8 +90,28 @@ void TelegrafHttpClient::postValues(
   handle_curl_error(res, "setting content type", logger);
   res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
   handle_curl_error(res, "setting POST data", logger);
+
+  std::string response_string;
+  res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeFunction);
+  handle_curl_error(res, "setting body write function", logger);
+  res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
+  handle_curl_error(res, "setting body write data", logger);
+
   res = curl_easy_perform(curl);
   handle_curl_error(res, "executing POST request", logger);
+
+  if (res == CURLE_OK) {
+    long response_code = 0;
+    res = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+    handle_curl_error(res, "getting request information", logger);
+    if (response_code != 204) {
+      RCLCPP_ERROR(logger,
+                   "Sending data to telegraf returned HTTP response code %ld. "
+                   "Response: %s",
+                   response_code, response_string.c_str());
+    }
+  }
+
   curl_slist_free_all(headers);
 }
 
