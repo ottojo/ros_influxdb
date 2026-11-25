@@ -62,7 +62,7 @@ void TelegrafHttpClient::postValues(
     // This requires json_string_fields = ["string_*"] in the
     // [[inputs.http_listener_v2]] telegraf config
     post_data += std::visit(
-        Overload{[&key](const std::string &v) -> std::string {
+        Overload{[&key](const std::string & /*v*/) -> std::string {
                    return ", \"string_" + key + "\": ";
                  },
                  [&key](auto) -> std::string { return ", \"" + key + "\": "; }},
